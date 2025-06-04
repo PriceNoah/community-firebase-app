@@ -1,0 +1,11 @@
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+
+const auth = getAuth();
+signInWithEmailAndPassword(auth, email, password)
+  .then((userCredential) => {
+    // Erfolgreich eingeloggt
+    const user = userCredential.user;
+  })
+  .catch((error) => {
+    // Fehlerbehandlung
+  });
