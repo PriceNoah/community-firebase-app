@@ -1,70 +1,33 @@
+// ...Imports wie gehabt, aber OHNE firebase/auth!
 import * as ImagePicker from 'expo-image-picker';
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut
-} from "firebase/auth";
-import {
-  addDoc,
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp
-} from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { addDoc, collection, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Button, FlatList, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { auth, db, storage } from "../../firebase";
-import SplashScreen from "../../SplashScreen"; // Passe den Pfad an!
+import { Button, FlatList, Image, Text, TextInput, View } from "react-native";
+import { db, storage } from "../../firebase";
+import SplashScreen from "../../SplashScreen";
 
 export default function HomeScreen() {
   const [showSplash, setShowSplash] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-  if (showSplash) return <SplashScreen />;
-
-  const [user, setUser] = useState<any>(null);
-  const [authState, setAuthState] = useState<"login" | "register">("login");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const [postText, setPostText] = useState<string>("");
   const [postImage, setPostImage] = useState<string | null>(null);
   const [feed, setFeed] = useState<any[]>([]);
 
+  // Dummy-User anlegen!
+  const user = { email: "testuser@expogo.com", uid: "dummy-id" };
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setUser);
-    return unsub;
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
+    // Feed laden
     const q = query(collection(db, "feed"), orderBy("created", "desc"));
     const unsub = onSnapshot(q, snap => {
       setFeed(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return unsub;
   }, []);
-
-  const handleRegister = async () => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (e: any) {
-      alert(e.message);
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (e: any) {
-      alert(e.message);
-    }
-  };
-
-  const handleLogout = () => signOut(auth);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images });
@@ -90,25 +53,12 @@ export default function HomeScreen() {
     setPostImage(null);
   };
 
-  if (!user) {
-    return (
-      <View style={{ flex:1, justifyContent: "center", padding: 20 }}>
-        <Text style={{ fontSize: 24, marginBottom: 16 }}>{authState === "register" ? "Registrieren" : "Login"}</Text>
-        <TextInput placeholder="E-Mail" value={email} onChangeText={setEmail} autoCapitalize="none" style={{ borderBottomWidth: 1, marginBottom: 12, padding: 8 }} />
-        <TextInput placeholder="Passwort" value={password} onChangeText={setPassword} secureTextEntry style={{ borderBottomWidth: 1, marginBottom: 12, padding: 8 }} />
-        <Button title={authState === "register" ? "Registrieren" : "Login"} onPress={authState === "register" ? handleRegister : handleLogin} />
-        <TouchableOpacity onPress={() => setAuthState(authState === "register" ? "login" : "register")}>
-          <Text style={{ color: "blue", textAlign: "center", marginTop: 10 }}>
-            {authState === "register" ? "Schon Mitglied? Login" : "Noch kein Konto? Jetzt registrieren"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (showSplash) return <SplashScreen />;
 
+  // Kein Auth-UI, direkt Feed:
   return (
     <View style={{ flex: 1, padding: 10, paddingTop: 40 }}>
-      <Text style={{ fontSize: 20, marginBottom: 10 }}>Community Feed</Text>
+      <Text style={{ fontSize: 20, marginBottom: 10 }}>Community Feed (Demo)</Text>
       <View style={{ flexDirection: "row", marginBottom: 8 }}>
         <TextInput placeholder="Sag etwas..." value={postText} onChangeText={setPostText} style={{ flex: 1, borderWidth: 1, borderRadius: 5, padding: 8, marginRight: 5 }} />
         <Button title="Foto" onPress={pickImage} />
@@ -129,7 +79,6 @@ export default function HomeScreen() {
           </View>
         )}
       />
-      <Button title="Logout" onPress={handleLogout} color="red" />
     </View>
   );
 }
